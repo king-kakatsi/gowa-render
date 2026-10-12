@@ -1,0 +1,33 @@
+# Blueprint Render — GOWA (test, plan Free)
+# Docs limites Free : sleep après ~15 min sans trafic + filesystem éphémère
+# (session WhatsApp perdue à chaque restart/redeploy => rescan QR).
+# Le keep-alive GitHub Actions (.github/workflows/keepalive.yml) empêche le sleep,
+# mais ne peut rien contre la perte de session au restart. Pour la persistance :
+# passer en Starter + disque monté sur /app/storages.
+services:
+  - type: web
+    name: gowa
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./docker/golang.Dockerfile
+    dockerContext: .
+    # Render injecte $PORT (défaut 10000) : GOWA doit écouter dessus.
+    # Si le deploy loggue une erreur de port, fallback : remplacer par
+    #   dockerCommand: rest --port=10000 --os=GOWA-render
+    # et fixer PORT=10000 dans le dashboard Render.
+    dockerCommand: rest --port=$PORT --os=GOWA-render
+    healthCheckPath: /health
+    envVars:
+      - key: APP_BASIC_AUTH
+        sync: false # secret -> saisi au launch, ex: admin:TonMotDePasseFort
+      - key: APP_OS
+        value: GOWA-render
+      - key: APP_DEBUG
+        value: "false"
+      - key: WHATSAPP_WEBHOOK
+        value: ""
+      - key: WHATSAPP_AUTO_MARK_READ
+        value: "false"
+      - key: WHATSAPP_PRESENCE_ON_CONNECT
+        value: unavailable
