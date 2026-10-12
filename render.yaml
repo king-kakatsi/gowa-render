@@ -10,15 +10,16 @@ services:
     runtime: docker
     plan: free
     region: frankfurt
-    dockerfilePath: ./docker/golang.Dockerfile
+    dockerfilePath: ./Dockerfile
     dockerContext: .
-    # Render injecte $PORT (défaut 10000) : GOWA doit écouter dessus.
-    # Si le deploy loggue une erreur de port, fallback : remplacer par
-    #   dockerCommand: rest --port=10000 --os=GOWA-render
-    # et fixer PORT=10000 dans le dashboard Render.
-    dockerCommand: rest --port=$PORT --os=GOWA-render
+    # Port : le CLI Render ne sait pas renseigner "Docker Command", donc on ne
+    # peut pas passer --port=$PORT. Solution validée le 12/10/2026 : forcer
+    # APP_PORT=10000 (PORT par défaut de Render) via variable d'env
+    # (API : PUT /services/{id}/env-vars/APP_PORT). Laisser CMD par défaut.
     healthCheckPath: /health
     envVars:
+      - key: APP_PORT
+        value: "10000" # = PORT par défaut Render ; si tu changes PORT, change ici aussi
       - key: APP_BASIC_AUTH
         sync: false # secret -> saisi au launch, ex: admin:TonMotDePasseFort
       - key: APP_OS
